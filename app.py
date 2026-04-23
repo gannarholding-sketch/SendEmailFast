@@ -1,16 +1,17 @@
 from flask import Flask, request, jsonify, send_from_directory
 import smtplib
+import os
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-
+ 
 app = Flask(__name__)
-
+ 
 # ── Config ──────────────────────────────────────────
 SENDER_EMAIL = "gannarholding@gmail.com"
 SENDER_NAME  = "Pacific"
 APP_PASSWORD  = "wtcm dhoe djpd bxjd"
 SUBJECT      = "Regarding Hiring Manpower from Nepal"
-
+ 
 # ── HTML Body ────────────────────────────────────────
 HTML_BODY = """
 <html>
@@ -69,44 +70,45 @@ HTML_BODY = """
 </body>
 </html>
 """
-
+ 
 TEXT_BODY = """Dear Sir/Madam,
-
+ 
 We are Pacific HR Pvt. Ltd., an ISO-certified HR Management Company in Nepal.
 With 19 years of experience, we specialize in placing professionals tailored to your requirements.
-
+ 
 Our services include:
 1. Swift Deployment – Candidates placed within 10 days.
 2. Experienced Workforce – Skilled professionals ready to contribute.
 3. Flexible Agreements – Customizable contracts.
 4. Visa Cost Commitment – We cover visa costs if needed.
 5. Pre-Deployment Training – Training provided as per your instructions.
-
+ 
 With Best Regards,
 Ganga Kumari Pun
 Managing Director
 +977-9851019359
 www.pacifichumanresources.com
 """
-
+ 
 @app.route("/")
 def index():
-    return send_from_directory(".", "index.html")
-
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    return send_from_directory(base_dir, "index.html")
+ 
 @app.route("/send", methods=["POST"])
 def send_email():
     data = request.get_json()
     emails_raw = data.get("emails", "")
-
+ 
     # Parse comma or newline separated emails
     recipients = [e.strip() for e in emails_raw.replace("\n", ",").split(",") if e.strip()]
-
+ 
     if not recipients:
         return jsonify({"success": False, "message": "No valid email addresses provided."})
-
+ 
     success = []
     failed = []
-
+ 
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(SENDER_EMAIL, APP_PASSWORD)
@@ -124,7 +126,7 @@ def send_email():
                     failed.append({"email": email, "error": str(e)})
     except Exception as e:
         return jsonify({"success": False, "message": f"SMTP connection failed: {str(e)}"})
-
+ 
     return jsonify({
         "success": True,
         "sent": len(success),
@@ -132,9 +134,8 @@ def send_email():
         "successList": success,
         "failedList": failed
     })
-
-# Replace the last line with this:
+ 
 if __name__ == "__main__":
-    import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+ 
